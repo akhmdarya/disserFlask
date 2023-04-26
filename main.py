@@ -41,27 +41,34 @@ def upload_file():
         os.mkdir(target)
     d = ""
     try:
-        file = request.files['file_from_react']
-        filename = "upl.png"
-        # print(f"Uploading file {filename}")
-        destination = "/".join([target, filename])
-        file.save(destination)
+        # file = request.files['file_from_react']
+        # filename = "upl.png"
+        # # print(f"Uploading file {filename}")
+        # destination = "/".join([target, filename])
+        # file.save(destination)
+        #
+        # original_image_file = f'F:/disserApplication/backend/uploads/upl.png'
+        # lsb_img = Image.open(original_image_file)
+        # dct_img = cv2.imread(original_image_file, cv2.IMREAD_UNCHANGED)
+        # print(f"Uploading file {dct_img}")
+        #
+        # secret_msg = data
+        # print("The message length is: ", len(secret_msg))
+        # lsb_img_encoded = LSB().encode_image(lsb_img, secret_msg)
+        # # dct_img_encoded = DCT().encode_image(dct_img, secret_msg)
+        # # lsb_encoded_image_file ="lsb_" + original_image_file
+        #
+        # lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_image.png')
+        # # lsb_img_encoded.save(lsb_encoded_image_file)
+        # dct_encoded_image_file = "dct_" + original_image_file
+        # # cv2.imwrite(dct_encoded_image_file, dct_img_encoded)
 
-        original_image_file = f'F:/disserApplication/backend/uploads/upl.png'
-        lsb_img = Image.open(original_image_file)
-        dct_img = cv2.imread(original_image_file, cv2.IMREAD_UNCHANGED)
-        print(f"Uploading file {dct_img}")
 
-        secret_msg = data
-        print("The message length is: ", len(secret_msg))
-        lsb_img_encoded = LSB().encode_image(lsb_img, secret_msg)
-        # dct_img_encoded = DCT().encode_image(dct_img, secret_msg)
-        # lsb_encoded_image_file ="lsb_" + original_image_file
+        encoded_image_file = f'F:/disserApplication/backend/uploads/stego_image.png'
+        lsb_img = Image.open(encoded_image_file)
+        lsb_hidden_text = LSB().decode_image(lsb_img)
 
-        lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_image.png')
-        # lsb_img_encoded.save(lsb_encoded_image_file)
-        dct_encoded_image_file = "dct_" + original_image_file
-        # cv2.imwrite(dct_encoded_image_file, dct_img_encoded)
+        print(f"!!!!!!!!!!!!!!!!!!!! {lsb_hidden_text}")
 
         d = "Success"
 
