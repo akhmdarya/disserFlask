@@ -13,7 +13,7 @@ from Crypto.Util.Padding import pad, unpad
 import base64
 from io import BytesIO
 
-
+key = b'abcdefghijklmnop'
 from werkzeug.utils import secure_filename
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLD = 'F:/disserApplication/backend'
@@ -111,9 +111,9 @@ def upload_fileDCT():
         # print(f"Uploading file {filename}")
         destination = "/".join([target, filename])
         file.save(destination)
-        # image = Image.open(f'F:/disserApplication/backend/uploads/uplDCT.png')
-        # image = image.convert('RGB')
-        # image.save(destination)
+        image = Image.open(f'F:/disserApplication/backend/uploads/uplDCT.png')
+        image = image.convert('RGB')
+        image.save(destination)
         original_image_file = f'F:/disserApplication/backend/uploads/uplDCT.png'
         dct_img = cv2.imread(original_image_file, cv2.IMREAD_UNCHANGED)
         secret_msg = data
@@ -181,7 +181,14 @@ def upload_fileModM():
         original_image_file = f'F:/disserApplication/backend/uploads/uplModMLSB.png'
         lsb_img = Image.open(original_image_file)
         secret_msg = data
-        print("The message length is: ", len(secret_msg))
+        secret_msg = secret_msg.encode('utf-8')
+        cipher = AES.new(key, AES.MODE_ECB)
+        ciphertext = cipher.encrypt(pad(secret_msg, AES.block_size))
+
+        # Convert the ciphertext to hexadecimal format
+        secret_msg = ciphertext.hex()
+
+        print(secret_msg)
         lsb_img_encoded = ModMLSB().encode_image(lsb_img, secret_msg)
         lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_imageModMLSB.png')
         d = "Success"
@@ -202,7 +209,16 @@ def decode_fileModM():
         lsb_hidden_text = ModMLSB().decode_image(lsb_img)
         print(f"!!!!!!!!!!!!!!!!!!!! {lsb_hidden_text}")
         d = lsb_hidden_text
-        return jsonify(d)
+        ciphertext = bytes.fromhex(d)
+
+        # Create the AES cipher object and decrypt the message
+        cipher = AES.new(key, AES.MODE_ECB)
+        decrypted_message = unpad(cipher.decrypt(ciphertext), AES.block_size)
+        message = decrypted_message.decode('utf-8')
+
+        # Print the decrypted message
+        print(f"DECODEEE {message}")
+        return jsonify(message)
     except Exception as e:
         print(f"Couldn't upload file {e}")
         d = "(("
@@ -213,8 +229,8 @@ def decode_fileModM():
 def report():
     try:
         originalDCT = cv2.imread(f'F:/disserApplication/backend/uploads/uplDCT.png')
-        originalModLSB = cv2.imread(f'F:/disserApplication/backend/uploads/uplModLSB.png')
-        originalLSB = cv2.imread(f'F:/disserApplication/backend/uploads/uplModMLSB.png')
+        originalModLSB = cv2.imread(f'F:/disserApplication/backend/uploads/uplModMLSB.png')
+        originalLSB = cv2.imread(f'F:/disserApplication/backend/uploads/uplLSB.png')
         lsbEncoded = cv2.imread(f'F:/disserApplication/backend/uploads/stego_imageLSB.png')
         lsbModEncoded = cv2.imread(f'F:/disserApplication/backend/uploads/stego_imageModMLSB.png')
         dctEncoded = cv2.imread(f'F:/disserApplication/backend/uploads/stego_imageDCT.png')
