@@ -3,6 +3,7 @@ import cv2
 from Crypto.Cipher import AES
 from PIL import Image
 import secrets
+from skimage import io
 import app as app
 from classes import LSB, DCT, Compare, ModMLSB
 from flask import Flask, flash, request, redirect, url_for,jsonify,session
@@ -13,17 +14,17 @@ from Crypto.Util.Padding import pad, unpad
 import base64
 from io import BytesIO
 
-from modifiedclasses import Median
+from modifiedclasses import Median, Gauss
 
 key = b'abcdefghijklmnop'
 from werkzeug.utils import secure_filename
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLD = 'F:/disserApplication/backend'
 
-flagLSB=0
-flagAESLSB=0
-flagMedian=0
-flagGauss=0
+# flagLSB=0
+# flagAESLSB=0
+# flagMedian=0
+# flagGauss=0
 
 UPLOAD_FOLDER = os.path.join(APP_ROOT, UPLOAD_FOLD)
 
@@ -67,8 +68,10 @@ def upload_file():
         lsb_img = Image.open(original_image_file)
         secret_msg = data
         print("The message length is: ", len(secret_msg))
-        lsb_img_encoded = LSB().encode_image(lsb_img, secret_msg)
+        lsb_img_encoded, flagLSB = LSB().encode_image(lsb_img, secret_msg)
         lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_imageLSB.png')
+        with open('my_file.txt', 'a') as f:
+            f.write(f"flagLSB = '{flagLSB}'\n")
         d = "Success"
         return jsonify(d)
 
@@ -124,6 +127,10 @@ def upload_fileDCT():
         print("The message length is: ", len(secret_msg))
         dct_img_encoded, flagDCT = DCT().encode_image(dct_img, secret_msg)
         print(f"flagDCT {flagDCT}")
+        with open('my_file.txt', 'a') as f:
+            f.write(f"flagDCT = '{flagDCT}'\n")
+            # Convert the variable to a string and write it to the file
+
 
         dct_encoded_image_file = f'F:/disserApplication/backend/uploads/stego_imageDCT.png'
         cv2.imwrite(dct_encoded_image_file, dct_img_encoded)
@@ -194,8 +201,12 @@ def upload_fileModM():
         secret_msg = ciphertext.hex()
 
         print(secret_msg)
-        lsb_img_encoded = ModMLSB().encode_image(lsb_img, secret_msg)
+        lsb_img_encoded, flagAES = ModMLSB().encode_image(lsb_img, secret_msg)
         lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_imageModMLSB.png')
+
+        with open('my_file.txt', 'a') as f:
+            f.write(f"flagAES = '{flagAES}'\n")
+
         d = "Success"
         return jsonify((f"Decrypted AES message : {secret_msg}"))
 
@@ -255,7 +266,9 @@ def upload_file_median():
         lsb_img = Image.open(original_image_file)
         secret_msg = data
         print("The message length is: ", len(secret_msg))
-        lsb_img_encoded = Median().encode_image(lsb_img, secret_msg)
+        lsb_img_encoded, flagMedian = Median().encode_image(lsb_img, secret_msg)
+        with open('my_file.txt', 'a') as f:
+            f.write(f"flagMedian = '{flagMedian}'\n")
         lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_imageMedian.png')
         d = "Success"
         return jsonify(d)
@@ -307,8 +320,10 @@ def upload_file_gauss():
         lsb_img = Image.open(original_image_file)
         secret_msg = data
         print("The message length is: ", len(secret_msg))
-        lsb_img_encoded = Median().encode_image(lsb_img, secret_msg)
+        lsb_img_encoded, flagGauss = Gauss().encode_image(lsb_img, secret_msg)
         lsb_img_encoded.save(f'F:/disserApplication/backend/uploads/stego_imageGauss.png')
+        with open('my_file.txt', 'a') as f:
+            f.write(f"flagGauss = '{flagGauss}'\n")
         d = "Success"
         return jsonify(d)
 
@@ -361,27 +376,83 @@ def report():
         lsb_mod_encoded_img = cv2.cvtColor(lsbModEncoded, cv2.COLOR_BGR2RGB)
         dct_encoded_img = cv2.cvtColor(dctEncoded, cv2.COLOR_BGR2RGB)
 
+        with open('my_file.txt', 'r') as f:
+            flagDCT = None
+            flagAES = None
+            flagLSB = None
+            flagMedian = None
+            flagGauss = None
+
+            # Read each line of the file
+            for line in f:
+                # Split the line into words
+                words = line.split()
+                parts = line.strip().split('=')
+
+                # Check if the first part is 'flagDCT'
+                if parts[0].strip() == 'flagDCT':
+                    # Extract the value and remove the single quotes
+                    flagDCT = parts[1].strip()[1:-1]
+
+                # Check if the first part is 'flagAES'
+                if parts[0].strip() == 'flagAES':
+                    # Extract the value and remove the single quotes
+                    flagAES = parts[1].strip()[1:-1]
+
+                if parts[0].strip() == 'flagMedian':
+                    # Extract the value and remove the single quotes
+                     flagMedian = parts[1].strip()[1:-1]
+
+                if parts[0].strip() == 'flagLSB':
+                    # Extract the value and remove the single quotes
+                    flagLSB = parts[1].strip()[1:-1]
+
+                if parts[0].strip() == 'flagGauss':
+                    # Extract the value and remove the single quotes
+                    flagGauss = parts[1].strip()[1:-1]
+
+        # # Print the value of flagDCT
+        # if flagDCT is not None:
+        #     print(flagDCT)
+        # else:
+        #     print("Could not find flagDCT in file.")
 
         list = [{
             "type":"LSB",
             "MSE": Compare().meanSquareError(originalLSB, lsb_encoded_img),
-            "PSNR": Compare().psnr(originalLSB, lsb_encoded_img)},
-            # "flag": flagDCT ,
+            "PSNR": Compare().psnr(originalLSB, lsb_encoded_img),
+            "flag": flagLSB,
+            "SSIM" :Compare().ssim(originalLSB, lsb_encoded_img),
+        },
+
 
             { "type":"DCT",
                 "MSE": Compare().meanSquareError(originalDCT, dct_encoded_img),
-            "PSNR": Compare().psnr(originalDCT, dct_encoded_img)},
+            "PSNR": Compare().psnr(originalDCT, dct_encoded_img),
+              "flag": flagDCT,
+              "SSIM": Compare().ssim(originalDCT, dct_encoded_img),
+              }
+              ,
             {"type": "AES LSB",
              "MSE": Compare().meanSquareError(originalModLSB, lsb_mod_encoded_img),
-             "PSNR": Compare().psnr(originalModLSB, lsb_mod_encoded_img)}
+             "PSNR": Compare().psnr(originalModLSB, lsb_mod_encoded_img),
+             "flag":flagAES,
+             "SSIM": Compare().ssim(originalModLSB, lsb_mod_encoded_img),
+             }
             ,
             {"type": "Gauss LSB",
              "MSE": Compare().meanSquareError(originalGauss, gauss_encoded_img),
-             "PSNR": Compare().psnr(originalGauss, gauss_encoded_img)}
+             "PSNR": Compare().psnr(originalGauss, gauss_encoded_img),
+             "flag":flagGauss,
+             "SSIM": Compare().ssim(originalGauss, gauss_encoded_img),
+             }
             ,
             {"type": "Median LSB",
              "MSE": Compare().meanSquareError(originalMedian, median_encoded_img),
-             "PSNR": Compare().psnr(originalMedian, median_encoded_img)}
+             "PSNR": Compare().psnr(originalMedian, median_encoded_img),
+             "flag":flagMedian,
+             "SSIM": Compare().ssim(originalMedian, median_encoded_img),
+             }
 
 
 
